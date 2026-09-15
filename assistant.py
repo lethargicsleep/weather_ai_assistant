@@ -27,25 +27,32 @@ class WeatherAiAssistant:
         precipitation_numbers = hourly_data["precipitation"]
         precipitation_words = []
 
-        for precipitation in precipitation_numbers:
+        for hour, precipitation in enumerate(precipitation_numbers):
             if precipitation <= 0.2:
-                precipitation_words.append("Сухо")
-            elif precipitation <= 1:
-                precipitation_words.append("мелкий дождь")
-            elif precipitation <= 2:
-                precipitation_words.append("обычный дождь")
-            else:
-                precipitation_words.append("ливень")
+                continue
 
-        hourly_precipitation = ", ".join(precipitation_words)
+            if precipitation <= 1:
+                status = "мелкий дождь"
+            elif precipitation <= 2:
+                status = "обычный дождь"
+            else:
+                status = "ливень"
+
+            precipitation_words.append(f"* в {hour}:00 — {status}")
+
+        if precipitation_words:
+            hourly_precipitation = "\n".join(precipitation_words)
+            hourly_precipitation += "\n* В остальное время суток — сухо."
+        else:
+            hourly_precipitation = "Осадков не ожидается, весь день будет сухо."
 
         text_for_ai = (
             f"Погода: температура за сутки от {min_temp}°C до {max_temp}°C. "
-            f"При этом максимальная дневная температура {max_temp}°C ощущается как {max_apparent_temp}°C. "
-            f"Статус осадков по часам (начиная с 00:00 до 23:00): {hourly_precipitation}."
+            f"При этом максимальная дневная температура {max_temp}°C ощущается как {max_apparent_temp}°C.\n"
+            f"График осадков на сегодня:\n{hourly_precipitation}"
         )
-        print(text_for_ai)
         return text_for_ai
+
 
 
     def get_ai_report(self, weather_data):
@@ -58,9 +65,12 @@ class WeatherAiAssistant:
 
         ЕСЛИ ДАННЫХ НЕТ, ответь строго в таком стиле:
         Слушай, сервер с погодой не работает. Извини, попробуй позже.
-
-        ЕСЛИ ДАННЫЕ СТАНДАРТНЫЕ, ориентируйся строго на этот пример ответа:
-        «Днем будет тепло, до 23°C, по ощущениям даже чуть теплее. К вечеру может задуть дождик, так что лучше взять зонт. Остальное время будет сухо.»
+        
+        ЕСЛИ В СВОДКЕ НАПИСАНО «Осадков не ожидается», ответь строго в таком стиле:
+        «Сегодня будет тепло, до 23°C, по ощущениям даже чуть теплее. Весь день будет сухо, так что зонт не понадобится, можно спокойно гулять.»
+        
+        ЕСЛИ В СВОДКЕ ЕСТЬ КОНКРЕТНЫЕ ЧАСЫ ОСАДКОВ, пиши точное время цифрами. Ориентируйся строго на этот пример ответа:
+        «Днем будет тепло, до 23°C. В 12:00 и 13:00 обещают мелкий дождь, так что лучше взять зонт. В остальное время будет сухо.»
         """
 
         response = ollama.chat(
@@ -71,10 +81,3 @@ class WeatherAiAssistant:
             ]
         )
         return response["message"]["content"]
-
-
-if __name__ == "__main__":
-    a = WeatherAiAssistant()
-    raw_weather_data = a.get_weather_data(44.63,41.94)
-    weather_text = a.filter_weather_data(raw_weather_data)
-    print(a.get_ai_report(weather_text))
