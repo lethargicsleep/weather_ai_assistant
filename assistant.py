@@ -1,4 +1,3 @@
-import pandas as pd
 import ollama
 import requests
 
@@ -14,22 +13,11 @@ class WeatherAiAssistant:
     def filter_weather_data(self, weather_data):
         hourly_data = weather_data["hourly"]
 
-        weather_df = pd.DataFrame({
-            "Время": hourly_data["time"],
-            "Температура (°C)": hourly_data["temperature_2m"],
-            "Ощущается как (°С)": hourly_data["apparent_temperature"],
-            "Влажность (%)": hourly_data["relative_humidity_2m"],
-            "Осадки (мм)": hourly_data["precipitation"],
-        })
+        max_temp = max(hourly_data["temperature_2m"])
+        min_temp = min(hourly_data["temperature_2m"])
+        max_apparent_temp = max(hourly_data["apparent_temperature"])
 
-        weather_df["Spacer"] = "Время"
-        weather_df["Время"] = pd.to_datetime(weather_df["Время"]).dt.strftime("%Y-%m-%d %H:%M")
-
-        max_temp = weather_df["Температура (°C)"].max()
-        min_temp = weather_df["Температура (°C)"].min()
-        max_apparent_temp = weather_df["Ощущается как (°С)"].max()
-
-        precipitation_numbers = weather_df["Осадки (мм)"]
+        precipitation_numbers = hourly_data["precipitation"]
         precipitation_words = []
 
         for precipitation in precipitation_numbers:
